@@ -119,7 +119,7 @@ architecture Behavioral of montgomery_mult is
   --señal para escribir el loopback en la fifo de entrada de feedback
   signal wr_fifofeed : std_logic;
 
-  type state_type is (wait_start, process_data, dump_feed);
+  type state_type is (rst_fifos,wait_start, process_data, dump_feed);
   signal state, next_state                   : state_type;
   signal reg_busy                            : std_logic;
   signal reset_fifos                         : std_logic;
@@ -309,7 +309,7 @@ begin
     case state is
       --Esperamos a que tengamos un input y vamos cargando las b's
       when wait_start =>
-        reset_fifos   <= '1';
+        --reset_fifos   <= '1';
         if(valid_in = '1') then
           reset_fifos <= '0';
           --next_b_reg(0) <= b;
@@ -359,6 +359,9 @@ begin
           read_fifo_feedback <= '0';
           next_state <= process_data;
         end if;
+	 when rst_fifos =>
+	     next_state <= wait_start;
+		  reset_fifos   <= '1';
     end case;
     
   end process;
