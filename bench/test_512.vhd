@@ -42,11 +42,11 @@ architecture behavior of test_rsa_512 is
       clk       : in  std_logic;
       reset     : in  std_logic;
       valid_in  : in  std_logic;
+      start_in  : in  std_logic;
       x         : in  std_logic_vector(15 downto 0);
       y         : in  std_logic_vector(15 downto 0);
       m         : in  std_logic_vector(15 downto 0);
       r_c       : in  std_logic_vector(15 downto 0);
-      n_c       : in  std_logic_vector(15 downto 0);
       s         : out std_logic_vector(15 downto 0);
       valid_out : out std_logic;
       bit_size  : in  std_logic_vector(15 downto 0)
@@ -58,6 +58,7 @@ architecture behavior of test_rsa_512 is
   signal clk       : std_logic                     := '0';
   signal reset     : std_logic                     := '0';
   signal valid_in  : std_logic                     := '0';
+  signal start_in  : std_logic;
   signal x         : std_logic_vector(15 downto 0) := (others => '0');
   signal y         : std_logic_vector(15 downto 0) := (others => '0');
   signal m         : std_logic_vector(15 downto 0) := (others => '0');
@@ -78,11 +79,11 @@ begin
     clk       => clk,
     reset     => reset,
     valid_in  => valid_in,
+    start_in  => start_in,
     x         => x,
     y         => y,
     m         => m,
     r_c       => r_c,
-    n_c       => n_c,
     s         => s,
     valid_out => valid_out,
     bit_size  => bit_size
@@ -101,6 +102,7 @@ begin
   -- Stimulus process 
   stim_proc : process
   begin
+    start_in <= '0';
     valid_in <= '0';
     -- hold reset state for 100ms. 
     reset    <= '1';
@@ -111,12 +113,19 @@ begin
     -- insert stimulus here  
 
 --n_c and valid signal and the r_c constant are also required
-    n_c      <= x"738f";
-    valid_in <= '1';
+    --n_c      <= x"738f";
+    m        <= x"b491";
+    --Start_in to begin n_c calculation
+    start_in <= '1';
+    wait for clk_period;
+    start_in <= '0';
+    wait for clk_period*6;
+    --Start data flow
     x        <= x"f3ad";
     y        <= x"42b1";
     m        <= x"b491";
     r_c      <= x"f579";
+    valid_in <= '1';
     wait for clk_period;
     x        <= x"8e40";
     y        <= x"1ad3";
@@ -409,34 +418,34 @@ begin
     m   <= x"05d3";
     r_c <= x"9f9b";
     wait for clk_period;
-    x <= x"c6e4";
-    
-    m <= x"cacd";
+    x   <= x"c6e4";
+
+    m   <= x"cacd";
     r_c <= x"b574";
     wait for clk_period;
-    x <= x"4a36";
-    
-    m <= x"e16f";
+    x   <= x"4a36";
+
+    m   <= x"e16f";
     r_c <= x"4a50";
     wait for clk_period;
-    x <= x"f6df";
-    
-    m <= x"f67b";
+    x   <= x"f6df";
+
+    m   <= x"f67b";
     r_c <= x"6d56";
     wait for clk_period;
-    x <= x"061c";
-    
-    m <= x"7066";
+    x   <= x"061c";
+
+    m   <= x"7066";
     r_c <= x"bdc6";
     wait for clk_period;
-    x <= x"06c8";
-    
-    m <= x"08de";
-    r_c <= x"0400";
+    x   <= x"06c8";
+
+    m        <= x"08de";
+    r_c      <= x"0400";
     wait for clk_period;
-    valid_in <= '0'; 
-    
-    wait; 
-  end process; 
-  
-END; 
+    valid_in <= '0';
+
+    wait;
+  end process;
+
+end;
