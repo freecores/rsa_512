@@ -234,22 +234,22 @@ begin
 
         mont_input_a <= reg_input_5(47 downto 32);
         mont_input_n <= reg_input_5(31 downto 16);
-        mont_input_s <= reg_input_5(15 downto 0); 
-        
+        mont_input_s <= reg_input_5(15 downto 0);
+
         if(counter = (x"22")) then
           next_state <= wait_valid;
-          c_step <= '1';
-          reset_pe <= '1';
+          c_step     <= '1';
+          reset_pe   <= '1';
         end if;
-        
+
     end case;
-    
-    if(stop='1') then
+
+    if(stop = '1') then
       next_state <= wait_valid;
       --reset_fifo <= '1';
-      reset_pe <= '1';
+      reset_pe   <= '1';
     end if;
-    
+
   end process;
-  
+
 end Behavioral;

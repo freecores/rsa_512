@@ -36,11 +36,11 @@ entity rsa_top is
     clk       : in  std_logic;
     reset     : in  std_logic;
     valid_in  : in  std_logic;
+    start_in  : in  std_logic;
     x         : in  std_logic_vector(15 downto 0);  -- estos 3 son x^y mod m
     y         : in  std_logic_vector(15 downto 0);
     m         : in  std_logic_vector(15 downto 0);
     r_c       : in  std_logic_vector(15 downto 0);  --constante de montgomery r^2 mod m
-    n_c       : in  std_logic_vector(15 downto 0);  --constante necesaria en la multiplicacion
     s         : out std_logic_vector( 15 downto 0);
     valid_out : out std_logic;
     bit_size  : in  std_logic_vector(15 downto 0)  --tamano bit del exponente y (log2(y))
@@ -49,21 +49,29 @@ end rsa_top;
 
 architecture Behavioral of rsa_top is
 
+  component n_c_core
+    port (clk   : in  std_logic;
+          m_lsw : in  std_logic_vector(15 downto 0);
+          ce    : in  std_logic;
+          n_c   : out std_logic_vector(15 downto 0);
+          done  : out std_logic
+          );
+  end component;
 
 --Multiplicador de Montgomery que sera instanciado 2 veces
-  component montgomery_mult is
-                              port(
-                                clk       : in  std_logic;
-                                reset     : in  std_logic;
-                                valid_in  : in  std_logic;
-                                a         : in  std_logic_vector(15 downto 0);
-                                b         : in  std_logic_vector(15 downto 0);
-                                n         : in  std_logic_vector(15 downto 0);
-                                s_prev    : in  std_logic_vector(15 downto 0);
-                                n_c       : in  std_logic_vector(15 downto 0);
-                                s         : out std_logic_vector( 15 downto 0);
-                                valid_out : out std_logic  -- es le valid out TODO : cambiar nombre
-                                );
+  component montgomery_mult
+    port(
+      clk       : in  std_logic;
+      reset     : in  std_logic;
+      valid_in  : in  std_logic;
+      a         : in  std_logic_vector(15 downto 0);
+      b         : in  std_logic_vector(15 downto 0);
+      n         : in  std_logic_vector(15 downto 0);
+      s_prev    : in  std_logic_vector(15 downto 0);
+      n_c       : in  std_logic_vector(15 downto 0);
+      s         : out std_logic_vector( 15 downto 0);
+      valid_out : out std_logic         -- es le valid out TODO : cambiar nombre
+      );
   end component;
 
 --Memoria para guardar el exponente y el modulo
@@ -110,7 +118,20 @@ architecture Behavioral of rsa_top is
   signal bsize_reg, next_bsize_reg : std_logic_vector (15 downto 0);
   signal write_b_n                 : std_logic_vector(0 downto 0);
 
+  signal n_c_o    : std_logic_vector(15 downto 0);
+  signal n_c      : std_logic_vector(15 downto 0);
+  signal n_c_load : std_logic;
+
 begin
+
+  n_c1 : n_c_core
+    port map (
+      clk   => clk,
+      m_lsw => m,
+      ce    => start_in,
+      n_c   => n_c_o,
+      done  => n_c_load
+      );
 
 
   mon_1 : montgomery_mult port map(
@@ -180,7 +201,12 @@ begin
         addr_n      <= (others => '0');
         bit_counter <= (others => '0');
         bsize_reg   <= (others => '0');
+        n_c         <= (others => '0');
+
       else
+        if(n_c_load = '1') then
+          n_c       <= n_c_o;
+        end if;
         state       <= next_state;
         n_c_reg     <= next_n_c_reg;
         w_numb      <= next_w_numb;
@@ -427,69 +453,69 @@ begin
           end if;
           if((bit_counter = x"0001") and addr_exp = "000000000")
           then
-            next_state <= final_mult;
+            next_state       <= final_mult;
             next_count_input <= (others => '0');
-            next_addr_exp <= (others => '0'); 
+            next_addr_exp    <= (others => '0');
           end if;
         end if;
-        
-      when prepare_next =>
-        next_state <= transition;
+
+      when prepare_next             =>
+        next_state       <= transition;
         next_count_input <= (others => '0');
-        fifo_1_rd <= '0';
-        
+        fifo_1_rd        <= '0';
+
       when final_mult =>
         next_count_input <= count_input+1;
-        
+
         if(count_input > 2) then
           next_count_input <= (others => '0');
-          next_state <= prepare_final;		
+          next_state       <= prepare_final;
         end if;
-        
+
       when prepare_final =>
-        
+
         if(count_input > x"0000")then
           valid_in_mon_1 <= '1';
         end if;
-        
+
         fifo_1_rd <= '1';
-        
-        a_mon_1 <= fifo_out(15 downto 0);
+
+        a_mon_1   <= fifo_out(15 downto 0);
         if(count_input = x"0001") then
           b_mon_1 <= x"0001";
         end if;
-        n_mon_1 <= n_out;
-        
-        next_addr_n <= addr_n+1;
+        n_mon_1   <= n_out;
+
+        next_addr_n      <= addr_n+1;
         next_count_input <= count_input +1;
-        
+
         --Cuando llego al final cambio de estado a esperar resultados
         if(count_input = w_numb) then
-          next_state <= wait_final;
-          next_count_input <= (others =>'0');
+          next_state       <= wait_final;
+          next_count_input <= (others => '0');
         end if;
-        
+
       when wait_final =>
-        
+
         if(valid_out_mon_1 = '1') then
-          valid_out <= '1';
-          s <= s_out_mon_1;
-          next_state <= show_final;
+          valid_out        <= '1';
+          s                <= s_out_mon_1;
+          next_state       <= show_final;
           next_count_input <= count_input +1;
         end if;
-        
+
       when show_final =>
-        valid_out <= '1';
-        s <= s_out_mon_1;
+        valid_out        <= '1';
+        s                <= s_out_mon_1;
         next_count_input <= count_input +1;
         --Cuando llego al final cambio de estado a esperar resultados
         if(count_input = x"20") then
-          valid_out <= '0';
-          next_state <= wait_start;
+          valid_out      <= '0';
+          next_state     <= wait_start;
         end if;
-        
+
     end case;
-    
+
   end process;
 
 end Behavioral;

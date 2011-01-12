@@ -47,24 +47,24 @@ end montgomery_mult;
 architecture Behavioral of montgomery_mult is
 
   component montgomery_step is
-                               port(
-                                 clk       : in  std_logic;
-                                 reset     : in  std_logic;
-                                 valid_in  : in  std_logic;
-                                 a         : in  std_logic_vector(15 downto 0);
-                                 b         : in  std_logic_vector(15 downto 0);
-                                 n         : in  std_logic_vector(15 downto 0);
-                                 s_prev    : in  std_logic_vector(15 downto 0);
-                                 n_c       : in  std_logic_vector(15 downto 0);
-                                 s         : out std_logic_vector( 15 downto 0);
-                                 valid_out : out std_logic;  -- es le valid out TODO : cambiar nombre
-                                 busy      : out std_logic;
-                                 b_req     : out std_logic;
-                                 a_out     : out std_logic_vector(15 downto 0);
-                                 n_out     : out std_logic_vector(15 downto 0);  --señal que indica que el modulo está ocupado y no puede procesar nuevas peticiones
-                                 c_step    : out std_logic;  --genera un pulso cuando termina su computo para avisar al modulo superior
-                                 stop      : in  std_logic
-                                 );
+                              port(
+                                clk       : in  std_logic;
+                                reset     : in  std_logic;
+                                valid_in  : in  std_logic;
+                                a         : in  std_logic_vector(15 downto 0);
+                                b         : in  std_logic_vector(15 downto 0);
+                                n         : in  std_logic_vector(15 downto 0);
+                                s_prev    : in  std_logic_vector(15 downto 0);
+                                n_c       : in  std_logic_vector(15 downto 0);
+                                s         : out std_logic_vector( 15 downto 0);
+                                valid_out : out std_logic;  -- es le valid out TODO : cambiar nombre
+                                busy      : out std_logic;
+                                b_req     : out std_logic;
+                                a_out     : out std_logic_vector(15 downto 0);
+                                n_out     : out std_logic_vector(15 downto 0);  --señal que indica que el modulo está ocupado y no puede procesar nuevas peticiones
+                                c_step    : out std_logic;  --genera un pulso cuando termina su computo para avisar al modulo superior
+                                stop      : in  std_logic
+                                );
   end component;
 
   component fifo_512_bram
@@ -119,7 +119,7 @@ architecture Behavioral of montgomery_mult is
   --señal para escribir el loopback en la fifo de entrada de feedback
   signal wr_fifofeed : std_logic;
 
-  type state_type is (rst_fifos,wait_start, process_data, dump_feed);
+  type state_type is (rst_fifos, wait_start, process_data, dump_feed);
   signal state, next_state                   : state_type;
   signal reg_busy                            : std_logic;
   signal reset_fifos                         : std_logic;
@@ -318,21 +318,21 @@ begin
         end if;
 
       when process_data =>
-        wr_fifofeed <= valid_mid(7);
+        wr_fifofeed           <= valid_mid(7);
         if(valid_in = '1') then
-          wr_en     <= '1';
+          wr_en               <= '1';
         end if;
         --Miramos si hay que volver a meter datos a la b
         if(empty_feedback = '0' and reg_busy = '0') then
-          read_fifo_feedback <= '1';
-          next_state <= dump_feed;
+          read_fifo_feedback  <= '1';
+          next_state          <= dump_feed;
           next_count_feedback <= x"0000";
         end if;
-        
+
         --Si ya hemos sobrepasado el limite paramos y volvemos a la espera
-        if( count >  x"23") then
+        if( count > x"23") then
           next_state <= wait_start;
-					--y
+                                        --y
           for i in 0 to 7 loop
             stops(i) <= '1';
           end loop;
@@ -340,30 +340,30 @@ begin
         end if;
 
         --Vacia la fifo de feedback
-      when dump_feed =>		
-        if(empty_feedback='0')
+      when dump_feed =>
+        if(empty_feedback = '0')
         then
           next_count_feedback <= count_feedback+1;
         end if;
-        wr_fifofeed <= valid_mid(7);
-        read_fifo_feedback <= '1';
-        a_in <= fifo_out_feedback(48 downto 33);
-        n_in <= fifo_out_feedback(32 downto 17);
-        s_in <= fifo_out_feedback(16 downto 1);
-        f_valid <= fifo_out_feedback(0);
-        if(empty_feedback='1') then
-          next_state <= process_data;
-          
+        wr_fifofeed           <= valid_mid(7);
+        read_fifo_feedback    <= '1';
+        a_in                  <= fifo_out_feedback(48 downto 33);
+        n_in                  <= fifo_out_feedback(32 downto 17);
+        s_in                  <= fifo_out_feedback(16 downto 1);
+        f_valid               <= fifo_out_feedback(0);
+        if(empty_feedback = '1') then
+          next_state          <= process_data;
+
         end if;
         if(count_feedback = x"22") then
           read_fifo_feedback <= '0';
-          next_state <= process_data;
+          next_state         <= process_data;
         end if;
-	 when rst_fifos =>
-	     next_state <= wait_start;
-		  reset_fifos   <= '1';
+      when rst_fifos =>
+        next_state           <= wait_start;
+        reset_fifos          <= '1';
     end case;
-    
+
   end process;
 end Behavioral;
 

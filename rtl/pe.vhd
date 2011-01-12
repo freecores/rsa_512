@@ -121,12 +121,12 @@ begin
       next_n_reg      <= (others => '0');
       next_prod_aj_bi <= (others => '0');
       next_prod_nj_m  <= (others => '0');
-      next_sum_1      <= (others =>'0'); 
-      next_sum_2 <= (others=>'0'); 	
+      next_sum_1      <= (others => '0');
+      next_sum_2      <= (others => '0');
     end if;
-    
-    
-    
+
+
+
   end process;
 
 end Behavioral;

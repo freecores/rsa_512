@@ -111,27 +111,27 @@ begin
 
   process(clk, reset)
   begin
-    if(clk='1' and clk'event) then
-      
-      if(reset='1')then
-        m <= (others=> '0' );
+    if(clk = '1' and clk'event) then
+
+      if(reset = '1')then
+        m           <= (others => '0' );
         valid_m_reg <= '0';
       else
-        m <= next_m;
+        m           <= next_m;
         valid_m_reg <= valid_m;
       end if;
     end if;
   end process;
-  
-  process(m_out,valid_m, valid_m_reg, m)
+
+  process(m_out, valid_m, valid_m_reg, m)
   begin
-    m_val <= valid_m_reg;
-    if(valid_m = '1' and valid_m_reg ='0') then
+    m_val    <= valid_m_reg;
+    if(valid_m = '1' and valid_m_reg = '0') then
       next_m <= m_out;
     else
       next_m <= m;
     end if;
   end process;
-  
+
 end Behavioral;
 
